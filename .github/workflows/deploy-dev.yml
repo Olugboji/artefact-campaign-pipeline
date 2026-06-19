@@ -1,0 +1,24 @@
+name: Deploy Dev
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      AWS_ACCESS_KEY_ID:     ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION:            us-east-1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init
+        run: terraform init
+        working-directory: infrastructure/terraform/environments/dev
+      - name: Terraform apply
+        run: terraform apply -auto-approve
+        working-directory: infrastructure/terraform/environments/dev
+      - name: Upload Glue script
+        run: aws s3 cp src/glue_jobs/transform.py s3://artefact-dev-staging/scripts/transform.py

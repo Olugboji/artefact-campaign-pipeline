@@ -1,0 +1,24 @@
+name: Deploy Prod
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AWS_ACCESS_KEY_ID:     ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION:            us-east-1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init
+        run: terraform init
+        working-directory: infrastructure/terraform/environments/prod
+      - name: Terraform apply
+        run: terraform apply -auto-approve
+        working-directory: infrastructure/terraform/environments/prod
+      - name: Upload Glue script
+        run: aws s3 cp src/glue_jobs/transform.py s3://artefact-prod-staging/scripts/transform.py
